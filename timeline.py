@@ -14,7 +14,7 @@ token = os.environ["CIRCLECI_TOKEN"]
 
 
 def parse_time(s):
-    return time.mktime(time.strptime(s, "%Y-%m-%dT%H:%M:%SZ"))
+    return time.mktime(time.strptime(s, "%Y-%m-%dT%H:%M:%SZ")) / 60
 
 
 class Job(NamedTuple):
@@ -62,28 +62,60 @@ def main(args):
 
     parents = {
         j.id: max((by_id[d] for d in j.dependencies), key=lambda d: d.stop)
-        for j in jobs
         if j.dependencies
+        else None
+        for j in jobs
     }
+    children = {j.id: [] for j in jobs}
+    children[None] = []
+    for j in jobs:
+        p = parents[j.id]
+        children[p and p.id].append(j)
+
+    ranges = {}
+
+    def proc(j, y):
+        chs = children[j]
+        if not chs:
+            ranges[j] = (y, y + 1)
+            y += 1
+        else:
+            y0 = y
+            for ch in chs:
+                y = proc(ch.id, y)
+            ranges[j] = (y0, y)
+        return y
+
+    y1 = proc(None, 0)
 
     t0 = min(x.start for x in jobs)
     t1 = max(x.stop for x in jobs)
     fig = plt.figure(figsize=(20, 6))
     ax = fig.add_subplot()
-    for i, job in enumerate(jobs):
+    margin = 0.03
+    for j, (a, b) in ranges.items():
+        if j is None:
+            continue
+        job = by_id[j]
         ax.add_patch(
-            matplotlib.patches.Rectangle((job.start - t0, i), job.stop - job.start, 1)
+            matplotlib.patches.Rectangle(
+                (job.start - t0, a + margin), job.stop - job.start, b - a - 2 * margin
+            )
         )
         ax.text(
             (job.start + job.stop) / 2 - t0,
-            i + 0.5,
-            job.name,
+            (a + b) / 2,
+            "-".join(s[:4] for s in job.name.split("-")),
             horizontalalignment="center",
             verticalalignment="center",
         )
+
     ax.set_xlim(0, t1 - t0)
-    ax.set_ylim(0, len(jobs))
-    ax.grid(True)
+    ax.set_ylim(0, y1)
+    ax.set_xticks(range(0, int(t1 - t0), 2))
+    ax.set_yticks([])
+    ax.grid(True, color="#333", alpha=0.3)
+    fig.tight_layout()
     fig.savefig("timeline.pdf")
 
 
