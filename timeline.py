@@ -2,11 +2,12 @@
 
 from typing import List, NamedTuple
 import json
+import math
 import os
 import sys
 import time
 
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, ticker
 import matplotlib
 import requests
 
@@ -47,7 +48,7 @@ def api_get(url, *args, headers=None, **kwargs):
 
 
 def main(args):
-    workflow_id = args[0]
+    workflow_id = os.path.basename(args[0])
     fn = f"workflow-{workflow_id}.json"
     if os.path.exists(fn):
         with open(fn) as f:
@@ -112,9 +113,12 @@ def main(args):
 
     ax.set_xlim(0, t1 - t0)
     ax.set_ylim(0, y1)
-    ax.set_xticks(range(0, int(t1 - t0), 2))
+    # ax.set_xticks(range(0, math.ceil(t1 - t0), 2))
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(2))
+    ax.xaxis.set_minor_locator(ticker.MultipleLocator(1))
     ax.set_yticks([])
-    ax.grid(True, color="#333", alpha=0.3)
+    ax.grid(True, color="#333", alpha=0.4)
+    ax.grid(True, color="#333", alpha=0.15, which="minor")
     fig.tight_layout()
     fig.savefig("timeline.pdf")
 
