@@ -165,11 +165,6 @@ def proc(pipelines, workflows, jobs):
     return doc
 
 
-class Selection(enum.Enum):
-    Master = "master"
-    Pulls = "pulls"
-
-
 def worker(in_q, out_q):
     while True:
         (task, args) = in_q.get()
@@ -178,16 +173,16 @@ def worker(in_q, out_q):
             break
 
         if task == "pipelines":
-            sel, page, token = args
-
-            branch = "master" if sel == Selection.Master else None
+            branch, page, token = args
             pipelines = circleci.project_pipelines(branch, page_token=token)
 
             for pipeline in pipelines["items"]:
                 out_q.put(("pipeline", (pipeline,)))
                 in_q.put(("pipeline_workflows", (pipeline,)))
-            if page < 5:
-                in_q.put(("pipelines", (sel, page + 1, pipelines["next_page_token"])))
+
+            page -= 1
+            if page > 0:
+                in_q.put(("pipelines", (branch, page, pipelines["next_page_token"])))
 
         elif task == "pipeline_workflows":
             (pipeline,) = args
@@ -222,11 +217,11 @@ def get_data(args):
         return s["pipelines"], s["workflows"], s["jobs"]
 
     if len(args) < 1:
-        sel = Selection.Master
+        branch = None
+        pages = 6
     else:
-        sel = Selection(args[0])
-
-    print("selection:", sel, file=sys.stderr)
+        branch = args[0]
+        pages = 2
 
     pipelines_map = {}
     workflows_map = {}
@@ -235,7 +230,7 @@ def get_data(args):
     in_q = queue.Queue()
     out_q = queue.Queue()
 
-    in_q.put(("pipelines", (sel, 0, None)))
+    in_q.put(("pipelines", (branch, pages, None)))
     for _ in range(16):
         t = threading.Thread(target=worker, args=(in_q, out_q))
         t.daemon = True
