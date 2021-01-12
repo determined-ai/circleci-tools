@@ -41,7 +41,7 @@ def cached(enable, fn, func, *args, **kwargs):
 
 
 def parse_time(s):
-    s = re.sub(r"\.[0-9]+Z$", "", s)
+    s = re.sub(r"(\.[0-9]+)?Z$", "", s)
     return time.strptime(s, "%Y-%m-%dT%H:%M:%S")
 
 
@@ -84,6 +84,7 @@ def proc(pipelines, workflows, jobs):
     table = <table></table>
     header = <tr></tr>
     header.append(<td></td>)
+    header.append(<td></td>)
     for w, js in structure.items():
         header.append(
             <th style="min-width: 2em;"></th>
@@ -96,6 +97,7 @@ def proc(pipelines, workflows, jobs):
             </th>
         )
     header2 = <tr></tr>
+    header2.append(<td></td>)
     header2.append(<td></td>)
     for w, js in structure.items():
         header2.append(<td></td>)
@@ -120,8 +122,10 @@ def proc(pipelines, workflows, jobs):
             <td style="padding-right: .5em;"><a href="{rev_href}" title="{title}">{branch}</a></td>
         )
 
+        pipeline_workflows = {}
         statuses = {}
         for w in workflows[pipeline["id"]]:
+            pipeline_workflows[w["name"]] = w
             for j in jobs[w["id"]]:
                 href = (
                     (
@@ -136,10 +140,24 @@ def proc(pipelines, workflows, jobs):
                 )
 
         for i, (w, js) in enumerate(structure.items()):
-            if i:
-                row.append(
-                    <td class="spacer"></td>
-                )
+            time_str = ""
+            if w in pipeline_workflows:
+                workflow = pipeline_workflows[w]
+                print(workflow)
+                if workflow["created_at"] and workflow["stopped_at"]:
+                    t0 = parse_time(workflow["created_at"])
+                    t1 = parse_time(workflow["stopped_at"])
+                    dt = int(time.mktime(t1) - time.mktime(t0))
+                    h, m, s = dt // 3600, (dt % 3600) // 60, dt % 60
+                    time_str = (
+                        "{}:{:02}:{:02}".format(h, m, s)
+                        if h
+                        else "{}:{:02}".format(m, s)
+                    )
+            row.append(
+                <td style="font-size: 90%; text-align: right; padding-left: 1em;" class="spacer">{time_str}</td>
+            )
+
             for j in js:
                 stat, href = statuses.get((w, j), ("—", None))
                 if hasattr(SVG, stat):
@@ -209,6 +227,7 @@ def proc_all(pipelines, workflows, jobs):
     go(lambda p: p["vcs"].get("branch") == "master", "ci-master.html")
     go(lambda p: p["vcs"].get("branch", "").startswith("pull/"), "ci-pulls.html")
     go(lambda p: "tag" in p["vcs"], "ci-tags.html")
+    go(lambda p: True, "ci-all.html")
 
 
 def get_data(args):
@@ -218,7 +237,7 @@ def get_data(args):
 
     if len(args) < 1:
         branch = None
-        pages = 6
+        pages = 10
     else:
         branch = args[0]
         pages = 2
