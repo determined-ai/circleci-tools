@@ -66,9 +66,7 @@ def proc(pipelines, workflows, jobs):
     structure = defaultdict(dict)
 
     sub_pipelines = [
-        pipeline
-        for pipeline_num, pipeline in sorted(pipelines.items(), reverse=True)
-        if "determined-ai/determined" in pipeline["project_slug"]
+        pipeline for pipeline_num, pipeline in sorted(pipelines.items(), reverse=True)
     ]
 
     for pipeline in sub_pipelines:
@@ -172,7 +170,7 @@ def proc(pipelines, workflows, jobs):
     doc.append(head)
     doc.append(body)
 
-    print(doc)
+    return doc
 
 
 class Selection(enum.Enum):
@@ -189,10 +187,9 @@ def worker(in_q, out_q):
 
         if task == "pipelines":
             sel, page, token = args
-            if sel == Selection.Master:
-                pipelines = circleci.project_pipelines("master", page_token=token)
-            else:
-                pipelines = circleci.pipelines(page_token=token)
+
+            branch = "master" if sel == Selection.Master else None
+            pipelines = circleci.project_pipelines(branch, page_token=token)
 
             for pipeline in pipelines["items"]:
                 out_q.put(("pipeline", (pipeline,)))
@@ -258,7 +255,15 @@ def main(args):
             workflow, jobs = ret
             jobs_map[workflow["id"]] = jobs
 
-    proc(pipelines_map, workflows_map, jobs_map)
+    def go(pipeline_filt, fn):
+        sub_pipelines = {k: v for k, v in pipelines_map.items() if pipeline_filt(v)}
+        doc = proc(sub_pipelines, workflows_map, jobs_map)
+        with open(fn, "w") as f:
+            print(doc, file=f)
+
+    go(lambda p: p["vcs"].get("branch") == "master", "ci-master.html")
+    go(lambda p: p["vcs"].get("branch", "").startswith("pull/"), "ci-pulls.html")
+    go(lambda p: "tag" in p["vcs"], "ci-tags.html")
 
 
 if __name__ == "__main__":
