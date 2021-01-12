@@ -1,5 +1,6 @@
 # coding: pyxl
 
+import argparse
 import enum
 import json
 import os
@@ -231,16 +232,12 @@ def proc_all(pipelines, workflows, jobs):
 
 
 def get_data(args):
-    if 0:
+    if args.cached:
         s = json.load(open("all-cache.json"))
         return s["pipelines"], s["workflows"], s["jobs"]
 
-    if len(args) < 1:
-        branch = None
-        pages = 10
-    else:
-        branch = args[0]
-        pages = 2
+    if args.pages is None:
+        args.pages = 8 if args.branch is None else 2
 
     pipelines_map = {}
     workflows_map = {}
@@ -249,8 +246,8 @@ def get_data(args):
     in_q = queue.Queue()
     out_q = queue.Queue()
 
-    in_q.put(("pipelines", (branch, pages, None)))
-    for _ in range(16):
+    in_q.put(("pipelines", (args.branch, args.pages, None)))
+    for _ in range(args.jobs):
         t = threading.Thread(target=worker, args=(in_q, out_q))
         t.daemon = True
         t.start()
@@ -289,7 +286,13 @@ def get_data(args):
 
 
 def main(args):
-    data = get_data(args)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("branch", default=None, nargs="?")
+    parser.add_argument("--pages", type=int, default=None)
+    parser.add_argument("--cached", action="store_true")
+    parser.add_argument("-J", "--jobs", type=int, default=32)
+
+    data = get_data(parser.parse_args(args))
     proc_all(*data)
 
 
