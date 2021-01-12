@@ -55,14 +55,6 @@ class SVG:
 
 
 def proc(pipelines, workflows, jobs):
-    with open("structure.json", "w") as f:
-        print(
-            json.dumps(
-                {"pipelines": pipelines, "workflows": workflows, "jobs": jobs}, indent=2
-            ),
-            file=f,
-        )
-
     structure = defaultdict(dict)
 
     sub_pipelines = [
@@ -109,7 +101,7 @@ def proc(pipelines, workflows, jobs):
         header2.append(<td></td>)
         for j in js:
             header2.append(
-                <td style="vertical-align: bottom; transform: rotate(40deg); transform-origin: bottom; padding-bottom: .5em;"><div class="rotated">{j}</div></td>
+                <td style="vertical-align: bottom; transform: rotate(45deg); transform-origin: bottom; padding-bottom: .5em;"><div class="rotated">{j}</div></td>
             )
 
     table.append(header)
@@ -212,11 +204,22 @@ def worker(in_q, out_q):
         in_q.task_done()
 
 
-def main(args):
+def proc_all(pipelines, workflows, jobs):
+    def go(pipeline_filt, fn):
+        sub_pipelines = {k: v for k, v in pipelines.items() if pipeline_filt(v)}
+        doc = proc(sub_pipelines, workflows, jobs)
+        with open(fn, "w") as f:
+            print(doc, file=f)
+
+    go(lambda p: p["vcs"].get("branch") == "master", "ci-master.html")
+    go(lambda p: p["vcs"].get("branch", "").startswith("pull/"), "ci-pulls.html")
+    go(lambda p: "tag" in p["vcs"], "ci-tags.html")
+
+
+def get_data(args):
     if 0:
-        s = json.load(open("structure.json"))
-        proc(s["pipelines"], s["workflows"], s["jobs"])
-        return
+        s = json.load(open("all-cache.json"))
+        return s["pipelines"], s["workflows"], s["jobs"]
 
     if len(args) < 1:
         sel = Selection.Master
@@ -255,15 +258,25 @@ def main(args):
             workflow, jobs = ret
             jobs_map[workflow["id"]] = jobs
 
-    def go(pipeline_filt, fn):
-        sub_pipelines = {k: v for k, v in pipelines_map.items() if pipeline_filt(v)}
-        doc = proc(sub_pipelines, workflows_map, jobs_map)
-        with open(fn, "w") as f:
-            print(doc, file=f)
+    with open("all-cache.json", "w") as f:
+        print(
+            json.dumps(
+                {
+                    "pipelines": pipelines_map,
+                    "workflows": workflows_map,
+                    "jobs": jobs_map,
+                },
+                indent=2,
+            ),
+            file=f,
+        )
 
-    go(lambda p: p["vcs"].get("branch") == "master", "ci-master.html")
-    go(lambda p: p["vcs"].get("branch", "").startswith("pull/"), "ci-pulls.html")
-    go(lambda p: "tag" in p["vcs"], "ci-tags.html")
+    return pipelines_map, workflows_map, jobs_map
+
+
+def main(args):
+    data = get_data(args)
+    proc_all(*data)
 
 
 if __name__ == "__main__":
