@@ -150,21 +150,24 @@ def proc(pipelines, workflows, jobs):
 
         for i, (w, js) in enumerate(structure.items()):
             time_str = ""
+            time_style = "font-size: 90%; text-align: right; padding-left: 1em;"
             if w in pipeline_workflows:
                 workflow = pipeline_workflows[w]
-                print(workflow)
-                if workflow["created_at"] and workflow["stopped_at"]:
-                    t0 = parse_time(workflow["created_at"])
-                    t1 = parse_time(workflow["stopped_at"])
-                    dt = int(time.mktime(t1) - time.mktime(t0))
-                    h, m, s = dt // 3600, (dt % 3600) // 60, dt % 60
-                    time_str = (
-                        "{}:{:02}:{:02}".format(h, m, s)
-                        if h
-                        else "{}:{:02}".format(m, s)
-                    )
+                t0 = time.mktime(parse_time(workflow["created_at"]))
+                if workflow["stopped_at"]:
+                    t1 = time.mktime(parse_time(workflow["stopped_at"]))
+                else:
+                    t1 = time.mktime(time.gmtime())
+                    time_style += "color: gray; font-style: italic;"
+
+                dt = int(t1 - t0)
+                h, m, s = dt // 3600, (dt % 3600) // 60, dt % 60
+                time_str = (
+                    "{}:{:02}:{:02}".format(h, m, s) if h else "{}:{:02}".format(m, s)
+                )
+
             row.append(
-                <td style="font-size: 90%; text-align: right; padding-left: 1em;" class="spacer">{time_str}</td>
+                <td style="{time_style}" class="spacer">{time_str}</td>
             )
 
             for j in js:
