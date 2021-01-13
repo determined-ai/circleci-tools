@@ -66,6 +66,14 @@ def proc(pipelines, workflows, jobs):
         for w in workflows[pipeline["id"]]:
             for j in jobs[w["id"]]:
                 structure[w["name"]][j["name"]] = None
+
+    try:
+        # Push nightly to the end, or it'll flip back and forth depending on
+        # whether the last job was a nightly or not.
+        structure["nightly"] = structure.pop("nightly")
+    except KeyError:
+        pass
+
     doc = <html></html>
     style = """
     .rotated { vertical-align: top; transform: rotate(180deg); writing-mode: vertical-lr; min-width: 1em; }
