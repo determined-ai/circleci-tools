@@ -22,7 +22,19 @@ for name, attrs in [
     ("path", ["d", "name", "fill", "fill-rule"]),
     ("g", ["name", "stroke", "stroke-width", "fill", "fill-rule"]),
     ("circle", ["name", "fill", "cx", "cy", "r"]),
-    # ("animateTransform", ["attributeName", "type", "from", "to", "dur", "repeatCount"]),
+    (
+        "animateTransform",
+        [
+            "attributename",
+            "calcmode",
+            "type",
+            "values",
+            "keytimes",
+            "keysplines",
+            "dur",
+            "repeatcount",
+        ],
+    ),
 ]:
     globals()["x_" + name] = type(
         "x_" + name, (html.x_html_element,), {"__attrs__": {a: str for a in attrs}}
@@ -50,9 +62,10 @@ class SVG:
     success = <svg style="color: rgb(4, 155, 74);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 L12,2 Z M10,17 L5,12 L6.41,10.59 L10,14.17 L17.59,6.58 L19,8 L10,17 L10,17 Z"></path></svg>
     failed = <svg style="color: rgb(242, 70, 70);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 L12,2 Z M13,17 L11,17 L11,15 L13,15 L13,17 L13,17 Z M13,13 L11,13 L11,7 L13,7 L13,13 L13,13 Z"></path></svg>
     blocked = <svg style="color: rgb(127, 127, 127);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path fill-rule="evenodd" d="M2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 C6.48,2 2,6.48 2,12 Z M7,10.5 C6.17,10.5 5.5,11.17 5.5,12 C5.5,12.83 6.17,13.5 7,13.5 C7.83,13.5 8.5,12.83 8.5,12 C8.5,11.17 7.83,10.5 7,10.5 Z M17,10.5 C16.17,10.5 15.5,11.17 15.5,12 C15.5,12.83 16.17,13.5 17,13.5 C17.83,13.5 18.5,12.83 18.5,12 C18.5,11.17 17.83,10.5 17,10.5 Z M12,10.5 C11.17,10.5 10.5,11.17 10.5,12 C10.5,12.83 11.17,13.5 12,13.5 C12.83,13.5 13.5,12.83 13.5,12 C13.5,11.17 12.83,10.5 12,10.5 Z"></path></svg>
-    running = <svg style="color: rgb(53, 149, 220);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><g name="icon-workflows-running" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><circle name="Oval" fill="#3AA3F2" cx="12" cy="12" r="10"></circle><path d="M22,12 C22,6.4771525 17.5228475,2 12,2 C6.4771525,2 2,6.4771525 2,12" name="Shape" fill="#D7ECFC"></path><path d="M22,12 C22,6.4771525 17.5228475,2 12,2 C6.4771525,2 2,6.4771525 2,12" name="Shape" fill="#3AA3F2"></path></g></svg>
+    running = <svg style="color: rgb(53, 149, 220);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"> <g name="icon-workflows-running" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <circle name="Oval" fill="#3AA3F2" cx="12" cy="12" r="10"></circle> <path d="M22,12 C22,6.4771525 17.5228475,2 12,2 C6.4771525,2 2,6.4771525 2,12" name="Shape" fill="#D7ECFC"> <animateTransform attributeName="transform" calcMode="spline" type="rotate" values="0 12 12; 540 12 12" keyTimes="0; 1" keySplines="0.3833057108382369 0.616694289161763 0.38330571083823695 0.616694289161763" dur="4s" repeatCount="indefinite"></animateTransform> </path> <path d="M22,12 C22,6.4771525 17.5228475,2 12,2 C6.4771525,2 2,6.4771525 2,12" name="Shape" fill="#3AA3F2"> <animateTransform attributeName="transform" calcMode="spline" type="rotate" values="0 12 12; 540 12 12" keyTimes="0; 1" keySplines="0.616694289161763 0.3833057108382369 0.616694289161763 0.38330571083823695" dur="4s" repeatCount="indefinite"></animateTransform> </path> </g></svg>
     on_hold = <svg style="color: rgb(166, 146, 236);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path fill-rule="evenodd" d="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 Z M11,16 L9,16 L9,8 L11,8 L11,16 Z M15,16 L13,16 L13,8 L15,8 L15,16 Z"></path></svg>
     canceled = <svg style="color: rgb(127, 127, 127);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 L12,2 Z M17,13 L7,13 L7,11 L17,11 L17,13 L17,13 Z"></path></svg>
+    queued = <svg style="color: rgb(127, 127, 127);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M12,20 C15.8659932,20 19,16.8659932 19,13 C19,9.13400675 15.8659932,6 12,6 C8.13400675,6 5,9.13400675 5,13 C5,16.8659932 8.13400675,20 12,20 Z M12,22 C7.02943725,22 3,17.9705627 3,13 C3,8.02943725 7.02943725,4 12,4 C16.9705627,4 21,8.02943725 21,13 C21,17.9705627 16.9705627,22 12,22 Z M11,1 L13,1 C13.5522847,1 14,1.44771525 14,2 C14,2.55228475 13.5522847,3 13,3 L11,3 C10.4477153,3 10,2.55228475 10,2 C10,1.44771525 10.4477153,1 11,1 Z M19.7781746,3.80761184 L21.1923882,5.22182541 C21.5829124,5.6123497 21.5829124,6.24551468 21.1923882,6.63603897 C20.8018639,7.02656326 20.1686989,7.02656326 19.7781746,6.63603897 L18.363961,5.22182541 C17.9734367,4.83130112 17.9734367,4.19813614 18.363961,3.80761184 C18.7544853,3.41708755 19.3876503,3.41708755 19.7781746,3.80761184 Z M13,9 C13,8.44771525 12.5522847,8 12,8 C11.4477153,8 11,8.44771525 11,9 L11,13 C11,13.2652165 11.1053568,13.5195704 11.2928932,13.7071068 L13.2928932,15.7071068 C13.6834175,16.0976311 14.3165825,16.0976311 14.7071068,15.7071068 C15.0976311,15.3165825 15.0976311,14.6834175 14.7071068,14.2928932 L13,12.5857864 L13,9 Z"></path></svg>
 
 
 def proc(pipelines, workflows, jobs):
