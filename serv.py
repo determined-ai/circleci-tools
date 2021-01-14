@@ -11,6 +11,15 @@ import cisummary
 
 app = Flask(__name__)
 
+try:
+    with open("secret", "rb") as f:
+        secret = f.read()
+except FileNotFoundError:
+    print("not using secret")
+else:
+    print(f"using secret of {len(secret)} bytes")
+    app.config["SECRET_KEY"] = secret
+
 
 @app.route("/master")
 def master():
