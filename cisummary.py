@@ -12,7 +12,6 @@ import time
 from collections import defaultdict
 
 from pyxl import html
-from pyxl.codec import parser
 
 import circleci
 
@@ -255,13 +254,13 @@ def proc_all(pipelines, workflows, jobs):
     go(lambda p: True, "ci-all.html")
 
 
-def get_data(args):
-    if args.cached:
+def get_data(branch, pages=None, cached=False, jobs=32):
+    if cached:
         s = json.load(open("all-cache.json"))
         return s["pipelines"], s["workflows"], s["jobs"]
 
-    if args.pages is None:
-        args.pages = 8 if args.branch is None else 2
+    if pages is None:
+        pages = 8 if branch is None else 2
 
     pipelines_map = {}
     workflows_map = {}
@@ -270,8 +269,8 @@ def get_data(args):
     in_q = queue.Queue()
     out_q = queue.Queue()
 
-    in_q.put(("pipelines", (args.branch, args.pages, None)))
-    for _ in range(args.jobs):
+    in_q.put(("pipelines", (branch, pages, None)))
+    for _ in range(jobs):
         t = threading.Thread(target=worker, args=(in_q, out_q))
         t.daemon = True
         t.start()
@@ -316,7 +315,9 @@ def main(args):
     parser.add_argument("--cached", action="store_true")
     parser.add_argument("-J", "--jobs", type=int, default=32)
 
-    data = get_data(parser.parse_args(args))
+    args = parser.parse_args(args)
+
+    data = get_data(args.branch, pages=args.pages, cached=args.cached, jobs=args.jobs)
     proc_all(*data)
 
 
