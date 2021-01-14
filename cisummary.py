@@ -207,7 +207,7 @@ def proc(pipelines, workflows, jobs):
     return doc
 
 
-def worker(in_q, out_q):
+def worker(in_q, out_q, pipeline_filter):
     while True:
         (task, args) = in_q.get()
         if task is None:
@@ -219,8 +219,9 @@ def worker(in_q, out_q):
             pipelines = circleci.project_pipelines(branch, page_token=token)
 
             for pipeline in pipelines["items"]:
-                out_q.put(("pipeline", (pipeline,)))
-                in_q.put(("pipeline_workflows", (pipeline,)))
+                if pipeline_filter(pipeline):
+                    out_q.put(("pipeline", (pipeline,)))
+                    in_q.put(("pipeline_workflows", (pipeline,)))
 
             page -= 1
             if page > 0:
@@ -254,7 +255,7 @@ def proc_all(pipelines, workflows, jobs):
     go(lambda p: True, "ci-all.html")
 
 
-def get_data(branch, pages=None, cached=False, jobs=32):
+def get_data(branch, pages=None, cached=False, jobs=32, pipeline_filter=lambda p: True):
     if cached:
         s = json.load(open("all-cache.json"))
         return s["pipelines"], s["workflows"], s["jobs"]
@@ -271,7 +272,11 @@ def get_data(branch, pages=None, cached=False, jobs=32):
 
     in_q.put(("pipelines", (branch, pages, None)))
     for _ in range(jobs):
-        t = threading.Thread(target=worker, args=(in_q, out_q))
+        t = threading.Thread(
+            target=worker,
+            args=(in_q, out_q),
+            kwargs={"pipeline_filter": pipeline_filter},
+        )
         t.daemon = True
         t.start()
 
