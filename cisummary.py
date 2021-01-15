@@ -57,6 +57,11 @@ def parse_time(s):
     return time.strptime(s, "%Y-%m-%dT%H:%M:%S")
 
 
+def format_duration(dt):
+    h, m, s = dt // 3600, (dt % 3600) // 60, dt % 60
+    return "{}:{:02}:{:02}".format(h, m, s) if h else "{}:{:02}".format(m, s)
+
+
 class SVG:
     success = <svg style="color: rgb(4, 155, 74);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 L12,2 Z M10,17 L5,12 L6.41,10.59 L10,14.17 L17.59,6.58 L19,8 L10,17 L10,17 Z"></path></svg>
     failed = <svg style="color: rgb(242, 70, 70);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 L12,2 Z M13,17 L11,17 L11,15 L13,15 L13,17 L13,17 Z M13,13 L11,13 L11,7 L13,7 L13,13 L13,13 Z"></path></svg>
@@ -160,15 +165,10 @@ def proc(pipelines, title=None):
                 else:
                     t1 = time.mktime(time.gmtime())
                     time_style += "color: gray; font-style: italic;"
-
                 dt = int(t1 - t0)
-                h, m, s = dt // 3600, (dt % 3600) // 60, dt % 60
-                time_str = (
-                    "{}:{:02}:{:02}".format(h, m, s) if h else "{}:{:02}".format(m, s)
-                )
 
             row.append(
-                <td style="{time_style}" class="spacer">{time_str}</td>
+                <td style="{time_style}" class="spacer">{format_duration(dt)}</td>
             )
 
             for j in js:
@@ -191,8 +191,13 @@ def proc(pipelines, title=None):
                 else:
                     b = stat
 
+                title = j
+                if job and "started_at" in job and "stopped_at" in job:
+                    t0 = time.mktime(parse_time(job["started_at"]))
+                    t1 = time.mktime(parse_time(job["stopped_at"]))
+                    title += ": " + format_duration(int(t1 - t0))
                 row.append(
-                    <td style="text-align: center;"><span title="{j}">{b}</span></td>
+                    <td style="text-align: center;"><span title="{title}">{b}</span></td>
                 )
 
         table.append(row)
