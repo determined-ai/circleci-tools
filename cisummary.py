@@ -67,16 +67,16 @@ class SVG:
     queued = <svg style="color: rgb(127, 127, 127);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M12,20 C15.8659932,20 19,16.8659932 19,13 C19,9.13400675 15.8659932,6 12,6 C8.13400675,6 5,9.13400675 5,13 C5,16.8659932 8.13400675,20 12,20 Z M12,22 C7.02943725,22 3,17.9705627 3,13 C3,8.02943725 7.02943725,4 12,4 C16.9705627,4 21,8.02943725 21,13 C21,17.9705627 16.9705627,22 12,22 Z M11,1 L13,1 C13.5522847,1 14,1.44771525 14,2 C14,2.55228475 13.5522847,3 13,3 L11,3 C10.4477153,3 10,2.55228475 10,2 C10,1.44771525 10.4477153,1 11,1 Z M19.7781746,3.80761184 L21.1923882,5.22182541 C21.5829124,5.6123497 21.5829124,6.24551468 21.1923882,6.63603897 C20.8018639,7.02656326 20.1686989,7.02656326 19.7781746,6.63603897 L18.363961,5.22182541 C17.9734367,4.83130112 17.9734367,4.19813614 18.363961,3.80761184 C18.7544853,3.41708755 19.3876503,3.41708755 19.7781746,3.80761184 Z M13,9 C13,8.44771525 12.5522847,8 12,8 C11.4477153,8 11,8.44771525 11,9 L11,13 C11,13.2652165 11.1053568,13.5195704 11.2928932,13.7071068 L13.2928932,15.7071068 C13.6834175,16.0976311 14.3165825,16.0976311 14.7071068,15.7071068 C15.0976311,15.3165825 15.0976311,14.6834175 14.7071068,14.2928932 L13,12.5857864 L13,9 Z"></path></svg>
 
 
-def proc(pipelines, workflows, jobs):
+def proc(pipelines):
     structure = defaultdict(dict)
 
     sub_pipelines = [
         pipeline for pipeline_num, pipeline in sorted(pipelines.items(), reverse=True)
     ]
 
-    for pipeline in sub_pipelines:
-        for w in workflows[pipeline["id"]]:
-            for j in jobs[w["id"]]:
+    for p in sub_pipelines:
+        for w in p["workflows"]:
+            for j in w["jobs"]:
                 structure[w["name"]][j["name"]] = None
 
     try:
@@ -143,28 +143,11 @@ def proc(pipelines, workflows, jobs):
             <td style="padding-right: .5em;"><a href="{rev_href}" title="{title}">{branch}</a></td>
         )
 
-        pipeline_workflows = {}
-        statuses = {}
-        for w in workflows[pipeline["id"]]:
-            pipeline_workflows[w["name"]] = w
-            for j in jobs[w["id"]]:
-                href = (
-                    (
-                        f"https://app.circleci.com/pipelines/github/determined-ai/determined/{pipeline['number']}/workflows/{w['id']}/jobs/{j['job_number']}"
-                    )
-                    if "job_number" in j
-                    else None
-                )
-                statuses[w["name"], j["name"]] = (
-                    j["status"],
-                    href,
-                )
-
         for i, (w, js) in enumerate(structure.items()):
             time_str = ""
             time_style = "font-size: 90%; text-align: right; padding-left: 1em;"
-            if w in pipeline_workflows:
-                workflow = pipeline_workflows[w]
+            if w in pipeline["workflow_names"]:
+                workflow = pipeline["workflow_names"][w]
                 t0 = time.mktime(parse_time(workflow["created_at"]))
                 if workflow["stopped_at"]:
                     t1 = time.mktime(parse_time(workflow["stopped_at"]))
@@ -183,7 +166,16 @@ def proc(pipelines, workflows, jobs):
             )
 
             for j in js:
-                stat, href = statuses.get((w, j), ("—", None))
+                job = pipeline["workflow_names"].get(w, {}).get("job_names", {}).get(j)
+                stat = job["status"] if job else "—"
+                href = (
+                    (
+                        f"https://app.circleci.com/pipelines/github/determined-ai/determined/{pipeline['number']}/workflows/{workflow['id']}/jobs/{job['job_number']}"
+                    )
+                    if job and "job_number" in job
+                    else None
+                )
+
                 if hasattr(SVG, stat):
                     stat = getattr(SVG, stat)
                 else:
@@ -242,10 +234,9 @@ def worker(in_q, out_q, pipeline_filter):
         in_q.task_done()
 
 
-def proc_all(pipelines, workflows, jobs):
-    def go(pipeline_filt, fn):
-        sub_pipelines = {k: v for k, v in pipelines.items() if pipeline_filt(v)}
-        doc = proc(sub_pipelines, workflows, jobs)
+def proc_all(pipelines):
+    def go(pipeline_filter, fn):
+        doc = proc({num: p for num, p in pipelines.items() if pipeline_filter(p)})
         with open(fn, "w") as f:
             print(doc, file=f)
 
@@ -257,8 +248,8 @@ def proc_all(pipelines, workflows, jobs):
 
 def get_data(branch, pages=None, cached=False, jobs=32, pipeline_filter=lambda p: True):
     if cached:
-        s = json.load(open("all-cache.json"))
-        return s["pipelines"], s["workflows"], s["jobs"]
+        with open("all-cache.json") as f:
+            return json.load(f)
 
     if pages is None:
         pages = 8 if branch is None else 2
@@ -297,20 +288,19 @@ def get_data(branch, pages=None, cached=False, jobs=32, pipeline_filter=lambda p
             workflow, jobs = ret
             jobs_map[workflow["id"]] = jobs
 
-    with open("all-cache.json", "w") as f:
-        print(
-            json.dumps(
-                {
-                    "pipelines": pipelines_map,
-                    "workflows": workflows_map,
-                    "jobs": jobs_map,
-                },
-                indent=2,
-            ),
-            file=f,
-        )
+    for num, pipeline in pipelines_map.items():
+        pipeline["workflows"] = workflows_map[pipeline["id"]]
+        pipeline["workflow_names"] = {
+            w["name"]: w for w in workflows_map[pipeline["id"]]
+        }
+        for workflow in pipeline["workflows"]:
+            workflow["jobs"] = jobs_map[workflow["id"]]
+            workflow["job_names"] = {j["name"]: j for j in jobs_map[workflow["id"]]}
 
-    return pipelines_map, workflows_map, jobs_map
+    with open("all-cache.json", "w") as f:
+        json.dump(pipelines_map, f, indent=2)
+
+    return pipelines_map
 
 
 def main(args):
@@ -322,8 +312,10 @@ def main(args):
 
     args = parser.parse_args(args)
 
-    data = get_data(args.branch, pages=args.pages, cached=args.cached, jobs=args.jobs)
-    proc_all(*data)
+    pipelines = get_data(
+        args.branch, pages=args.pages, cached=args.cached, jobs=args.jobs
+    )
+    proc_all(pipelines)
 
 
 if __name__ == "__main__":
