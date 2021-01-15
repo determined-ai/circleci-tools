@@ -17,7 +17,7 @@ import circleci
 
 
 for name, attrs in [
-    ("svg", ["viewbox", "fill", "xmlns"]),
+    ("svg", ["viewbox", "fill", "xmlns", "width", "height"]),
     ("path", ["d", "name", "fill", "fill-rule"]),
     ("g", ["name", "stroke", "stroke-width", "fill", "fill-rule"]),
     ("circle", ["name", "fill", "cx", "cy", "r"]),
@@ -71,6 +71,8 @@ class SVG:
     canceled = <svg style="color: rgb(127, 127, 127);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 L12,2 Z M17,13 L7,13 L7,11 L17,11 L17,13 L17,13 Z"></path></svg>
     queued = <svg style="color: rgb(127, 127, 127);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M12,20 C15.8659932,20 19,16.8659932 19,13 C19,9.13400675 15.8659932,6 12,6 C8.13400675,6 5,9.13400675 5,13 C5,16.8659932 8.13400675,20 12,20 Z M12,22 C7.02943725,22 3,17.9705627 3,13 C3,8.02943725 7.02943725,4 12,4 C16.9705627,4 21,8.02943725 21,13 C21,17.9705627 16.9705627,22 12,22 Z M11,1 L13,1 C13.5522847,1 14,1.44771525 14,2 C14,2.55228475 13.5522847,3 13,3 L11,3 C10.4477153,3 10,2.55228475 10,2 C10,1.44771525 10.4477153,1 11,1 Z M19.7781746,3.80761184 L21.1923882,5.22182541 C21.5829124,5.6123497 21.5829124,6.24551468 21.1923882,6.63603897 C20.8018639,7.02656326 20.1686989,7.02656326 19.7781746,6.63603897 L18.363961,5.22182541 C17.9734367,4.83130112 17.9734367,4.19813614 18.363961,3.80761184 C18.7544853,3.41708755 19.3876503,3.41708755 19.7781746,3.80761184 Z M13,9 C13,8.44771525 12.5522847,8 12,8 C11.4477153,8 11,8.44771525 11,9 L11,13 C11,13.2652165 11.1053568,13.5195704 11.2928932,13.7071068 L13.2928932,15.7071068 C13.6834175,16.0976311 14.3165825,16.0976311 14.7071068,15.7071068 C15.0976311,15.3165825 15.0976311,14.6834175 14.7071068,14.2928932 L13,12.5857864 L13,9 Z"></path></svg>
 
+    logo = <svg style="color: rgb(64, 64, 64);" height="24" width="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"> <circle fill="currentColor" cx="49.871479" cy="50.010807" id="circle2" r="9.9503775" style="stroke-width:1.33187" /> <path fill="currentColor" d="m 49.871482,8.2221539 c -19.47056,0 -35.831212,13.3186671 -40.4727677,31.3414891 -0.039956,0.158492 -0.069257,0.324975 -0.069257,0.496786 0,1.09879 0.8910187,1.98981 1.9898087,1.98981 h 16.849446 c 0.803117,0 1.489028,-0.476809 1.803348,-1.162721 0,0 0.0253,-0.04661 0.0333,-0.06926 3.473509,-7.495747 11.059822,-12.696687 19.863462,-12.696687 12.089354,0 21.890562,9.798544 21.890562,21.889231 0,12.090687 -9.798544,21.889231 -21.887899,21.889231 -8.80364,0 -16.388621,-5.20094 -19.863461,-12.695354 -0.0093,-0.02398 -0.03462,-0.07059 -0.03462,-0.07059 -0.321438,-0.707379 -1.026362,-1.161882 -1.803347,-1.162721 h -16.84946 c -1.100121,0 -1.9911398,0.89102 -1.9911398,1.98981 0,0.171811 0.027969,0.338294 0.069257,0.496786 4.6415558,18.022822 21.0022078,31.34149 40.4727678,31.34149 23.07992,0 41.788653,-18.710065 41.788653,-41.788653 0,-23.078588 -18.708733,-41.7886521 -41.788653,-41.7886521 z" style="stroke-width:1.33187" /> </svg>
+
 
 def proc(pipelines, title=None):
     structure = defaultdict(dict)
@@ -121,6 +123,7 @@ def proc(pipelines, title=None):
         header.append(
             <th style="min-width: 2em;"></th>
         )
+        header.append(<th></th>)
         header.append(
             <th style="height: 1em; min-height: 1em; text-align: center; font-size: 170%;" colspan="{len(js)}">
               <span style="position: absolute; transform: translate(-50%, 0%);">
@@ -132,6 +135,7 @@ def proc(pipelines, title=None):
     header2.append(<td></td>)
     header2.append(<td></td>)
     for w, js in structure.items():
+        header2.append(<td></td>)
         header2.append(<td></td>)
         for j in js:
             header2.append(
@@ -155,29 +159,40 @@ def proc(pipelines, title=None):
         )
 
         for i, (w, js) in enumerate(structure.items()):
-            time_str = ""
-            time_style = "font-size: 90%; text-align: right; padding-left: 1em;"
-            if w in pipeline["workflow_names"]:
+            if w not in pipeline["workflow_names"]:
+                row.append(
+                    <td class="spacer"></td>
+                )
+                row.append(
+                    <td class="spacer"></td>
+                )
+            else:
                 workflow = pipeline["workflow_names"][w]
                 t0 = time.mktime(parse_time(workflow["created_at"]))
+
+                time_style = "font-size: 90%;"
                 if workflow["stopped_at"]:
                     t1 = time.mktime(parse_time(workflow["stopped_at"]))
                 else:
                     t1 = time.mktime(time.gmtime())
                     time_style += "color: gray; font-style: italic;"
-                dt = int(t1 - t0)
 
-            row.append(
-                <td style="{time_style}" class="spacer">{format_duration(dt)}</td>
-            )
+                time_str = format_duration(int(t1 - t0))
+                timeline_href = f"workflow_timeline/{workflow['id']}"
+                time_link = <a href="{timeline_href}">{time_str}</a>
+                workflow_href = f"https://app.circleci.com/pipelines/github/determined-ai/determined/{pipeline['number']}/workflows/{workflow['id']}"
+                row.append(
+                    <td style="text-align: right; padding-left: 1em;" class="spacer"><span style="{time_style}">{time_link}</span></td>
+                )
+                row.append(
+                    <td class="spacer"><a href="{workflow_href}" title="{w}">{SVG.logo}</a></td>
+                )
 
             for j in js:
                 job = pipeline["workflow_names"].get(w, {}).get("job_names", {}).get(j)
                 stat = job["status"] if job else "—"
                 href = (
-                    (
-                        f"https://app.circleci.com/pipelines/github/determined-ai/determined/{pipeline['number']}/workflows/{workflow['id']}/jobs/{job['job_number']}"
-                    )
+                    f"{workflow_href}/jobs/{job['job_number']}"
                     if job and "job_number" in job
                     else None
                 )

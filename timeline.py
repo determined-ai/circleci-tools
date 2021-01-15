@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt, ticker
 import matplotlib
 import requests
 
-token = os.environ["CIRCLECI_TOKEN"]
+import circleci
 
 
 def parse_time(s):
@@ -38,27 +38,8 @@ class Job(NamedTuple):
         )
 
 
-def api_get(url, *args, headers=None, **kwargs):
-    if headers is None:
-        headers = {}
-    headers["Circle-Token"] = token
-    return requests.get(
-        "https://circleci.com/api/v2/" + url, *args, headers=headers, **kwargs
-    )
-
-
-def main(args):
-    workflow_id = os.path.basename(args[0])
-    fn = f"workflow-{workflow_id}.json"
-    if os.path.exists(fn):
-        with open(fn) as f:
-            j = json.load(f)
-    else:
-        j = api_get(f"workflow/{workflow_id}/job").json()
-        with open(fn, "w") as f:
-            json.dump(j, f)
-
-    jobs = [Job.from_json(x) for x in j["items"]]
+def make(workflow_id, out_fn):
+    jobs = [Job.from_json(x) for x in circleci.workflow_jobs(workflow_id)["items"]]
     by_id = {j.id: j for j in jobs}
 
     parents = {
@@ -120,7 +101,12 @@ def main(args):
     ax.grid(True, color="#333", alpha=0.4)
     ax.grid(True, color="#333", alpha=0.15, which="minor")
     fig.tight_layout()
-    fig.savefig("timeline.pdf")
+    fig.savefig(out_fn)
+
+
+def main(args):
+    workflow_id = os.path.basename(args[0])
+    make(workflow_id, "timeline.pdf")
 
 
 if __name__ == "__main__":

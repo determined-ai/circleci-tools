@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 
 import gzip
+import os
 import sys
+import tempfile
 from types import SimpleNamespace
 
 
 from flask import Flask, request, send_file
 
 import cisummary
+import timeline
 
 app = Flask(__name__)
 
@@ -49,11 +52,24 @@ def tags():
     return str(cisummary.proc(data, title="tags"))
 
 
+@app.route("/workflow_timeline/<uuid>")
+def workflow_timeline(uuid):
+    with tempfile.TemporaryDirectory() as d:
+        fn = os.path.join(d, "timeline.pdf")
+        timeline.make(uuid, fn)
+        return send_file(fn)
+
+
 @app.after_request
 def compress(r):
-    if "Content-Encoding" not in r.headers:
-        r.set_data(gzip.compress(r.get_data()))
-        r.headers["Content-Encoding"] = "gzip"
+    if "Content-Encoding" in r.headers:
+        return r
+    try:
+        data = r.get_data()
+    except RuntimeError:
+        return r
+    r.set_data(gzip.compress(r.get_data()))
+    r.headers["Content-Encoding"] = "gzip"
     return r
 
 
