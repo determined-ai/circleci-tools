@@ -74,7 +74,7 @@ class SVG:
     logo = <svg style="color: rgb(64, 64, 64);" height="24" width="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"> <circle fill="currentColor" cx="49.871479" cy="50.010807" id="circle2" r="9.9503775" style="stroke-width:1.33187" /> <path fill="currentColor" d="m 49.871482,8.2221539 c -19.47056,0 -35.831212,13.3186671 -40.4727677,31.3414891 -0.039956,0.158492 -0.069257,0.324975 -0.069257,0.496786 0,1.09879 0.8910187,1.98981 1.9898087,1.98981 h 16.849446 c 0.803117,0 1.489028,-0.476809 1.803348,-1.162721 0,0 0.0253,-0.04661 0.0333,-0.06926 3.473509,-7.495747 11.059822,-12.696687 19.863462,-12.696687 12.089354,0 21.890562,9.798544 21.890562,21.889231 0,12.090687 -9.798544,21.889231 -21.887899,21.889231 -8.80364,0 -16.388621,-5.20094 -19.863461,-12.695354 -0.0093,-0.02398 -0.03462,-0.07059 -0.03462,-0.07059 -0.321438,-0.707379 -1.026362,-1.161882 -1.803347,-1.162721 h -16.84946 c -1.100121,0 -1.9911398,0.89102 -1.9911398,1.98981 0,0.171811 0.027969,0.338294 0.069257,0.496786 4.6415558,18.022822 21.0022078,31.34149 40.4727678,31.34149 23.07992,0 41.788653,-18.710065 41.788653,-41.788653 0,-23.078588 -18.708733,-41.7886521 -41.788653,-41.7886521 z" style="stroke-width:1.33187" /> </svg>
 
 
-def proc(pipelines, title=None):
+def proc(pipelines, description=None):
     structure = defaultdict(dict)
 
     sub_pipelines = [
@@ -100,15 +100,18 @@ def proc(pipelines, title=None):
     tr:nth-of-type(n+3) td:nth-of-type(2n+3):not(.spacer) { background-color: hsl(0, 0%, 94%); }
     tr:nth-of-type(n+3) td:nth-of-type(2n+4):not(.spacer) { background-color: hsl(0, 0%, 88%); }
     """
+    title = "CI summary: " + description if description else ""
     head = (
         <head>
-        <title>CI summary{": " + title if title else ""}</title>
+        <title>{title}</title>
         <style>
           {style}
         </style>
         </head>
     )
     body = <body></body>
+    if title:
+        body.append(<h1 style="margin-bottom: 0; text-align: center;">{title}</h1>)
 
     timestamp = f"generated at {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(time.time()))} GMT"
     body.append(
@@ -125,7 +128,7 @@ def proc(pipelines, title=None):
         )
         header.append(<th></th>)
         header.append(
-            <th style="height: 1em; min-height: 1em; text-align: center; font-size: 170%;" colspan="{len(js)}">
+            <th style="height: 1em; min-height: 1em; text-align: center; font-size: 160%;" colspan="{len(js)}">
               <span style="position: absolute; transform: translate(-50%, 0%);">
                 {w}
               </span>

@@ -28,7 +28,7 @@ else:
 def master():
     pages = int(request.args.get("pages", 2))
     data = cisummary.get_data("master", pages=pages, jobs=32)
-    return str(cisummary.proc(data, title="master"))
+    return str(cisummary.proc(data, description="master"))
 
 
 @app.route("/pulls")
@@ -40,7 +40,7 @@ def pulls():
         jobs=32,
         pipeline_filter=lambda p: p["vcs"].get("branch", "").startswith("pull/"),
     )
-    return str(cisummary.proc(data, title="pulls"))
+    return str(cisummary.proc(data, description="pulls"))
 
 
 @app.route("/tags")
@@ -49,7 +49,7 @@ def tags():
     data = cisummary.get_data(
         None, pages=pages, jobs=32, pipeline_filter=lambda p: "tag" in p["vcs"]
     )
-    return str(cisummary.proc(data, title="tags"))
+    return str(cisummary.proc(data, description="tags"))
 
 
 @app.route("/workflow_timeline/<uuid>")
