@@ -111,7 +111,9 @@ def proc(pipelines, description=None):
     )
     body = <body></body>
     if title:
-        body.append(<h1 style="margin-bottom: 0; text-align: center;">{title}</h1>)
+        body.append(
+            <h1 style="margin-bottom: 0; text-align: center;">{title}</h1>
+        )
 
     timestamp = f"generated at {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(time.time()))} GMT"
     body.append(
@@ -142,7 +144,7 @@ def proc(pipelines, description=None):
         header2.append(<td></td>)
         for j in js:
             header2.append(
-                <td style="vertical-align: bottom; transform: rotate(45deg); transform-origin: bottom; padding-bottom: .5em;"><div class="rotated">{j}</div></td>
+                <td style="vertical-align: bottom; transform: rotate(45deg); transform-origin: bottom; padding-bottom: .5em;"><div style="white-space: nowrap;" class="rotated">{j}</div></td>
             )
 
     table.append(header)
@@ -155,7 +157,7 @@ def proc(pipelines, description=None):
         rev_href = f"https://github.com/determined-ai/determined/commit/{pipeline['vcs']['revision']}"
         title = pipeline["vcs"].get("commit", {}).get("subject", "")
         row.append(
-            <td style="padding-right: .5em;"><b>{ts}</b></td>
+            <td style="padding-right: .5em; white-space: nowrap;"><b>{ts}</b></td>
         )
         row.append(
             <td style="padding-right: .5em;"><a href="{rev_href}" title="{title}">{branch}</a></td>
