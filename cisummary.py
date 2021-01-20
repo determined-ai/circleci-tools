@@ -321,9 +321,13 @@ def get_data(branch, pages=None, cached=False, jobs=32, pipeline_filter=lambda p
 
     for num, pipeline in pipelines_map.items():
         pipeline["workflows"] = workflows_map[pipeline["id"]]
-        pipeline["workflow_names"] = {
-            w["name"]: w for w in workflows_map[pipeline["id"]]
-        }
+        pipeline["workflow_names"] = {}
+        for w in workflows_map[pipeline["id"]]:
+            if (
+                w["name"] not in pipeline["workflow_names"]
+                or pipeline["workflow_names"][w["name"]]["created_at"] < w["created_at"]
+            ):
+                pipeline["workflow_names"][w["name"]] = w
         for workflow in pipeline["workflows"]:
             workflow["jobs"] = jobs_map[workflow["id"]]
             workflow["job_names"] = {j["name"]: j for j in jobs_map[workflow["id"]]}
