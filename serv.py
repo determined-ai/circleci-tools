@@ -26,7 +26,7 @@ else:
 
 @app.route("/master")
 def master():
-    pages = int(request.args.get("pages", 2))
+    pages = int(request.args.get("pages", 5))
     data = cisummary.get_data("master", pages=pages, jobs=32)
     return str(cisummary.proc(data, description="master"))
 
