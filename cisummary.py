@@ -74,7 +74,7 @@ class SVG:
     logo = <svg style="color: rgb(64, 64, 64);" height="24" width="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"> <circle fill="currentColor" cx="49.871479" cy="50.010807" id="circle2" r="9.9503775" style="stroke-width:1.33187" /> <path fill="currentColor" d="m 49.871482,8.2221539 c -19.47056,0 -35.831212,13.3186671 -40.4727677,31.3414891 -0.039956,0.158492 -0.069257,0.324975 -0.069257,0.496786 0,1.09879 0.8910187,1.98981 1.9898087,1.98981 h 16.849446 c 0.803117,0 1.489028,-0.476809 1.803348,-1.162721 0,0 0.0253,-0.04661 0.0333,-0.06926 3.473509,-7.495747 11.059822,-12.696687 19.863462,-12.696687 12.089354,0 21.890562,9.798544 21.890562,21.889231 0,12.090687 -9.798544,21.889231 -21.887899,21.889231 -8.80364,0 -16.388621,-5.20094 -19.863461,-12.695354 -0.0093,-0.02398 -0.03462,-0.07059 -0.03462,-0.07059 -0.321438,-0.707379 -1.026362,-1.161882 -1.803347,-1.162721 h -16.84946 c -1.100121,0 -1.9911398,0.89102 -1.9911398,1.98981 0,0.171811 0.027969,0.338294 0.069257,0.496786 4.6415558,18.022822 21.0022078,31.34149 40.4727678,31.34149 23.07992,0 41.788653,-18.710065 41.788653,-41.788653 0,-23.078588 -18.708733,-41.7886521 -41.788653,-41.7886521 z" style="stroke-width:1.33187" /> </svg>
 
 
-def proc(pipelines, description=None):
+def proc(pipelines, meta=None, description=None):
     structure = defaultdict(dict)
 
     sub_pipelines = [
@@ -115,9 +115,13 @@ def proc(pipelines, description=None):
             <h1 style="margin-bottom: 0; text-align: center;">{title}</h1>
         )
 
-    timestamp = f"generated at {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(time.time()))} GMT"
+    info_str = f"generated at {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(time.time()))} GMT"
+    if meta is not None:
+        info_str += " ({}/{} uncached requests)".format(
+            meta["uncached_requests"], meta["total_requests"]
+        )
     body.append(
-        <div style="text-align: right;">{timestamp}</div>
+        <div style="text-align: right;">{info_str}</div>
     )
 
     table = <table></table>
@@ -230,7 +234,7 @@ def proc(pipelines, description=None):
     return doc
 
 
-def worker(in_q, out_q, pipeline_filter):
+def worker(in_q, out_q, pipeline_filter, request_counter):
     while True:
         (task, args) = in_q.get()
         if task is None:
@@ -240,6 +244,7 @@ def worker(in_q, out_q, pipeline_filter):
         if task == "pipelines":
             branch, page, token = args
             pipelines = circleci.project_pipelines(branch, page_token=token)
+            request_counter(pipelines.get(circleci.CACHE_KEY, False))
 
             for pipeline in pipelines["items"]:
                 if pipeline_filter(pipeline):
@@ -253,6 +258,8 @@ def worker(in_q, out_q, pipeline_filter):
         elif task == "pipeline_workflows":
             (pipeline,) = args
             workflows = circleci.pipeline_workflows(pipeline["id"])
+            request_counter(workflows.get(circleci.CACHE_KEY, False))
+
             out_q.put(("pipeline_workflows", (pipeline, workflows["items"])))
             for workflow in workflows["items"]:
                 in_q.put(("workflow_jobs", (workflow,)))
@@ -260,6 +267,7 @@ def worker(in_q, out_q, pipeline_filter):
         elif task == "workflow_jobs":
             (workflow,) = args
             jobs = circleci.workflow_jobs(workflow["id"])
+            request_counter(jobs.get(circleci.CACHE_KEY, False))
             out_q.put(("workflow_jobs", (workflow, jobs["items"])))
 
         in_q.task_done()
@@ -292,12 +300,26 @@ def get_data(branch, pages=None, cached=False, jobs=32, pipeline_filter=lambda p
     in_q = queue.Queue()
     out_q = queue.Queue()
 
+    total_requests = 0
+    uncached_requests = 0
+    lock = threading.Lock()
+
+    def request_counter(cached):
+        nonlocal total_requests, uncached_requests
+        with lock:
+            total_requests += 1
+            if not cached:
+                uncached_requests += 1
+
     in_q.put(("pipelines", (branch, pages, None)))
     for _ in range(jobs):
         t = threading.Thread(
             target=worker,
             args=(in_q, out_q),
-            kwargs={"pipeline_filter": pipeline_filter},
+            kwargs={
+                "pipeline_filter": pipeline_filter,
+                "request_counter": request_counter,
+            },
         )
         t.daemon = True
         t.start()
@@ -335,7 +357,10 @@ def get_data(branch, pages=None, cached=False, jobs=32, pipeline_filter=lambda p
     with open("all-cache.json", "w") as f:
         json.dump(pipelines_map, f, indent=2)
 
-    return pipelines_map
+    return pipelines_map, {
+        "total_requests": total_requests,
+        "uncached_requests": uncached_requests,
+    }
 
 
 def main(args):
@@ -347,7 +372,7 @@ def main(args):
 
     args = parser.parse_args(args)
 
-    pipelines = get_data(
+    pipelines, _ = get_data(
         args.branch, pages=args.pages, cached=args.cached, jobs=args.jobs
     )
     proc_all(pipelines)

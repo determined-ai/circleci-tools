@@ -27,29 +27,29 @@ else:
 @app.route("/master")
 def master():
     pages = int(request.args.get("pages", 5))
-    data = cisummary.get_data("master", pages=pages, jobs=32)
-    return str(cisummary.proc(data, description="master"))
+    data, meta = cisummary.get_data("master", pages=pages, jobs=32)
+    return str(cisummary.proc(data, meta=meta, description="master"))
 
 
 @app.route("/pulls")
 def pulls():
     pages = int(request.args.get("pages", 5))
-    data = cisummary.get_data(
+    data, meta = cisummary.get_data(
         None,
         pages=pages,
         jobs=32,
         pipeline_filter=lambda p: p["vcs"].get("branch", "").startswith("pull/"),
     )
-    return str(cisummary.proc(data, description="pulls"))
+    return str(cisummary.proc(data, meta=meta, description="pulls"))
 
 
 @app.route("/tags")
 def tags():
     pages = int(request.args.get("pages", 12))
-    data = cisummary.get_data(
+    data, meta = cisummary.get_data(
         None, pages=pages, jobs=32, pipeline_filter=lambda p: "tag" in p["vcs"]
     )
-    return str(cisummary.proc(data, description="tags"))
+    return str(cisummary.proc(data, meta=meta, description="tags"))
 
 
 @app.route("/workflow_timeline/<uuid>")

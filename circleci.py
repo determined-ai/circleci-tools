@@ -9,6 +9,8 @@ import requests
 
 token = os.environ["CIRCLECI_TOKEN"]
 
+CACHE_KEY = "__cached"
+
 
 def parse_time(s):
     return time.mktime(time.strptime(s, "%Y-%m-%dT%H:%M:%SZ"))
@@ -26,7 +28,7 @@ def api_get(
     fn = os.path.join("cache", _cache_name + ".json") if _cache_name else None
     if fn and os.path.exists(fn):
         with open(fn) as f:
-            return json.load(f)
+            return {CACHE_KEY: True, **json.load(f)}
     if headers is None:
         headers = {}
     headers["Circle-Token"] = token
