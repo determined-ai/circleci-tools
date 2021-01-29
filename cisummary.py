@@ -216,7 +216,7 @@ def proc(pipelines, meta=None, description=None):
                     b = stat
 
                 title = j
-                if job and "started_at" in job and "stopped_at" in job:
+                if job and job.get("started_at") and job.get("stopped_at"):
                     t0 = time.mktime(parse_time(job["started_at"]))
                     t1 = time.mktime(parse_time(job["stopped_at"]))
                     title += ": " + format_duration(int(t1 - t0))
