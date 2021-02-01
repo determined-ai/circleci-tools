@@ -15,7 +15,7 @@ import circleci
 
 
 def parse_time(s):
-    return time.mktime(time.strptime(s, "%Y-%m-%dT%H:%M:%SZ")) / 60
+    return time.mktime(time.strptime(s, "%Y-%m-%dT%H:%M:%SZ")) / 60 if s else None
 
 
 class Job(NamedTuple):
@@ -28,11 +28,12 @@ class Job(NamedTuple):
 
     @staticmethod
     def from_json(j):
+        print(j)
         return Job(
             id=j["id"],
             name=j["name"],
             start=parse_time(j["started_at"]),
-            stop=parse_time(j["stopped_at"]),
+            stop=parse_time(j.get("stopped_at")),
             status=j["status"],
             dependencies=j["dependencies"],
         )
@@ -42,11 +43,14 @@ def make(workflow_id, out_fn):
     jobs = [Job.from_json(x) for x in circleci.workflow_jobs(workflow_id)["items"]]
     by_id = {j.id: j for j in jobs}
 
-    parents = {
-        j.id: max((by_id[d] for d in j.dependencies), key=lambda d: d.stop)
+    deps = {
+        j.id: [by_id[d] for d in j.dependencies if by_id[d].stop]
         if j.dependencies
         else None
         for j in jobs
+    }
+    parents = {
+        j: max(ds, key=lambda d: d.stop) if ds else None for j, ds in deps.items()
     }
     children = {j.id: [] for j in jobs}
     children[None] = []
@@ -70,8 +74,8 @@ def make(workflow_id, out_fn):
 
     y1 = proc(None, 0)
 
-    t0 = min(x.start for x in jobs)
-    t1 = max(x.stop for x in jobs)
+    t0 = min(x.start for x in jobs if x.start)
+    t1 = max(x.stop for x in jobs if x.stop)
     fig = plt.figure(figsize=(20, 6))
     ax = fig.add_subplot()
     margin = 0.03
@@ -79,6 +83,8 @@ def make(workflow_id, out_fn):
         if j is None:
             continue
         job = by_id[j]
+        if not job.stop or not job.start:
+            continue
         ax.add_patch(
             matplotlib.patches.Rectangle(
                 (job.start - t0, a + margin), job.stop - job.start, b - a - 2 * margin
