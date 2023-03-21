@@ -207,6 +207,7 @@ def proc(pipelines, meta=None, description=None):
                     if job and "job_number" in job
                     else None
                 )
+                title = f"{j} ({stat})"
 
                 if hasattr(SVG, stat):
                     stat = getattr(SVG, stat)
@@ -217,7 +218,6 @@ def proc(pipelines, meta=None, description=None):
                 else:
                     b = stat
 
-                title = j
                 if job and job.get("started_at") and job.get("stopped_at"):
                     t0 = time.mktime(parse_time(job["started_at"]))
                     t1 = time.mktime(parse_time(job["stopped_at"]))
