@@ -1,0 +1,4 @@
+flask
+matplotlib
+pyxl4
+requests
