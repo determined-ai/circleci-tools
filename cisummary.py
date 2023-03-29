@@ -77,13 +77,28 @@ class SVG:
 
 
 def proc(pipelines, meta=None, description=None):
+    pipelines = [pipeline for pipeline_num, pipeline in sorted(pipelines.items(), reverse=True)]
+
+    # Expand out workflows with reruns into multiple copies of the pipeline,
+    # each containing all metadata but only workflows at a particular index.
+    pipelines2 = []
+    for p in pipelines:
+        for workflows in p["workflow_names"].values():
+            workflows.sort(key=lambda w: w["created_at"])
+        n = max(map(len, p["workflow_names"].values()))
+        for i in reversed(range(n)):
+            p2 = dict(p)
+            p2["workflow_names"] = {
+                name: workflow[i]
+                for name, workflow in p["workflow_names"].items()
+                if i < len(workflow)
+            }
+            pipelines2.append(p2)
+            p2["rerun_index"] = i
+    pipelines = pipelines2
+
     structure = defaultdict(dict)
-
-    sub_pipelines = [
-        pipeline for pipeline_num, pipeline in sorted(pipelines.items(), reverse=True)
-    ]
-
-    for p in sub_pipelines:
+    for p in pipelines:
         for w in p["workflows"]:
             for j in w["jobs"]:
                 structure[w["name"]][j["name"]] = None
@@ -156,8 +171,10 @@ def proc(pipelines, meta=None, description=None):
     table.append(header)
     table.append(header2)
 
-    for pipeline in sub_pipelines:
+    for pipeline in pipelines:
         row = <tr></tr>
+        if pipeline["rerun_index"] > 0:
+            row.set_attr("style", "opacity: 0.5")
         ts = time.strftime("%Y-%m-%d %H:%M:%S", parse_time(pipeline["created_at"]))
         branch = pipeline["vcs"].get("branch", pipeline["vcs"].get("tag", "???"))
         rev_href = f"https://github.com/determined-ai/determined/commit/{pipeline['vcs']['revision']}"
@@ -347,11 +364,7 @@ def get_data(branch, pages=None, cached=False, jobs=32, pipeline_filter=lambda p
         pipeline["workflows"] = workflows_map[pipeline["id"]]
         pipeline["workflow_names"] = {}
         for w in workflows_map[pipeline["id"]]:
-            if (
-                w["name"] not in pipeline["workflow_names"]
-                or pipeline["workflow_names"][w["name"]]["created_at"] < w["created_at"]
-            ):
-                pipeline["workflow_names"][w["name"]] = w
+            pipeline["workflow_names"].setdefault(w["name"], []).append(w)
         for workflow in pipeline["workflows"]:
             workflow["jobs"] = jobs_map[workflow["id"]]
             workflow["job_names"] = {j["name"]: j for j in jobs_map[workflow["id"]]}
