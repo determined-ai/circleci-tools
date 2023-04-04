@@ -177,13 +177,14 @@ def proc(pipelines, meta=None, description=None):
             row.set_attr("style", "opacity: 0.5")
         ts = time.strftime("%Y-%m-%d %H:%M:%S", parse_time(pipeline["created_at"]))
         branch = pipeline["vcs"].get("branch", pipeline["vcs"].get("tag", "???"))
-        rev_href = f"https://github.com/determined-ai/determined/commit/{pipeline['vcs']['revision']}"
+        rev = pipeline['vcs']['revision']
+        rev_href = f"https://github.com/determined-ai/determined/commit/{rev}"
         title = pipeline["vcs"].get("commit", {}).get("subject", "")
         row.append(
             <td style="padding-right: .5em; white-space: nowrap;"><b>{ts}</b></td>
         )
         row.append(
-            <td style="padding-right: .5em;"><a href="{rev_href}" title="{title}">{branch}</a></td>
+            <td style="padding-right: .5em;"><a href="{rev_href}" title="{title}"><tt>{rev[:8]}</tt> {branch}</a></td>
         )
 
         for i, (w, js) in enumerate(structure.items()):
