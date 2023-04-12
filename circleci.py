@@ -8,6 +8,7 @@ import time
 import requests
 
 token = os.environ["CIRCLECI_TOKEN"]
+project = os.getenv("CIRCLECI_PROJECT", "determined")
 
 CACHE_KEY = "__cached"
 
@@ -58,14 +59,14 @@ def pipelines(org="github/determined-ai", page_token=None):
     )
 
 
-def project_pipelines(branch, slug="github/determined-ai/determined", page_token=None):
+def project_pipelines(branch, slug=f"github/determined-ai/{project}", page_token=None):
     return api_get(
         f"project/{slug}/pipeline",
         params={"page-token": page_token, "branch": branch},
     )
 
 
-def pipeline(num, slug="github/determined-ai/determined"):
+def pipeline(num, slug=f"github/determined-ai/{project}"):
     return api_get(f"project/{slug}/pipeline/{num}")
 
 

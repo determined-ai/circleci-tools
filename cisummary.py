@@ -15,6 +15,8 @@ from pyxl import html
 
 import circleci
 
+project = os.getenv("CIRCLECI_PROJECT", "determined")
+
 
 for name, attrs in [
     ("svg", ["viewbox", "fill", "xmlns", "width", "height"]),
@@ -178,7 +180,7 @@ def proc(pipelines, meta=None, description=None):
         ts = time.strftime("%Y-%m-%d %H:%M:%S", parse_time(pipeline["created_at"]))
         branch = pipeline["vcs"].get("branch", pipeline["vcs"].get("tag", "???"))
         rev = pipeline['vcs']['revision']
-        rev_href = f"https://github.com/determined-ai/determined/commit/{rev}"
+        rev_href = f"https://github.com/determined-ai/{project}/commit/{rev}"
         title = pipeline["vcs"].get("commit", {}).get("subject", "")
         row.append(
             <td style="padding-right: .5em; white-space: nowrap;"><b>{ts}</b></td>
@@ -209,7 +211,7 @@ def proc(pipelines, meta=None, description=None):
                 time_str = format_duration(int(t1 - t0))
                 timeline_href = f"workflow_timeline/{workflow['id']}"
                 time_link = <a href="{timeline_href}">{time_str}</a>
-                workflow_href = f"https://app.circleci.com/pipelines/github/determined-ai/determined/{pipeline['number']}/workflows/{workflow['id']}"
+                workflow_href = f"https://app.circleci.com/pipelines/github/determined-ai/{project}/{pipeline['number']}/workflows/{workflow['id']}"
                 row.append(
                     <td style="text-align: right; padding-left: 1em;" class="spacer"><span style="{time_style}">{time_link}</span></td>
                 )
