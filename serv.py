@@ -58,7 +58,9 @@ def pulls(vcs, org, repo):
         None,
         pages=pages,
         jobs=32,
-        pipeline_filter=lambda p: p["vcs"].get("branch", "").startswith("pull/"),
+        pipeline_filter=lambda p: p.get("vcs", {})
+        .get("branch", "")
+        .startswith("pull/"),
     )
     return str(cisummary.proc(slug, data, meta=meta, description="pulls"))
 
@@ -68,7 +70,11 @@ def tags(vcs, org, repo):
     slug = get_slug(vcs, org, repo)
     pages = int(request.args.get("pages", 12))
     data, meta = cisummary.get_data(
-        slug, None, pages=pages, jobs=32, pipeline_filter=lambda p: "tag" in p["vcs"]
+        slug,
+        None,
+        pages=pages,
+        jobs=32,
+        pipeline_filter=lambda p: "tag" in p.get("vcs", {}),
     )
     return str(cisummary.proc(slug, data, meta=meta, description="tags"))
 
