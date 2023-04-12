@@ -85,7 +85,7 @@ def proc(pipelines, meta=None, description=None):
     for p in pipelines:
         for workflows in p["workflow_names"].values():
             workflows.sort(key=lambda w: w["created_at"])
-        n = max(map(len, p["workflow_names"].values()))
+        n = 1 if not p["workflow_names"] else max(map(len, p["workflow_names"].values()))
         for i in reversed(range(n)):
             p2 = dict(p)
             p2["workflow_names"] = {
