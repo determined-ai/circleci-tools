@@ -52,20 +52,20 @@ def api_post(url, *args, _version="2", headers=None, **kwargs):
     return r.json()
 
 
-def pipelines(org="github/determined-ai", page_token=None):
+def pipelines(org_slug, page_token=None):
     return api_get(
-        "pipeline", params={"org-slug": org, "page-token": page_token, "mine": "false"}
+        "pipeline", params={"org-slug": org_slug, "page-token": page_token, "mine": "false"}
     )
 
 
-def project_pipelines(branch, slug="github/determined-ai/determined", page_token=None):
+def project_pipelines(slug, branch, page_token=None):
     return api_get(
         f"project/{slug}/pipeline",
         params={"page-token": page_token, "branch": branch},
     )
 
 
-def pipeline(num, slug="github/determined-ai/determined"):
+def pipeline(slug, num):
     return api_get(f"project/{slug}/pipeline/{num}")
 
 

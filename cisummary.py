@@ -76,7 +76,7 @@ class SVG:
     logo = <svg style="color: rgb(64, 64, 64);" height="24" width="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"> <circle fill="currentColor" cx="49.871479" cy="50.010807" id="circle2" r="9.9503775" style="stroke-width:1.33187" /> <path fill="currentColor" d="m 49.871482,8.2221539 c -19.47056,0 -35.831212,13.3186671 -40.4727677,31.3414891 -0.039956,0.158492 -0.069257,0.324975 -0.069257,0.496786 0,1.09879 0.8910187,1.98981 1.9898087,1.98981 h 16.849446 c 0.803117,0 1.489028,-0.476809 1.803348,-1.162721 0,0 0.0253,-0.04661 0.0333,-0.06926 3.473509,-7.495747 11.059822,-12.696687 19.863462,-12.696687 12.089354,0 21.890562,9.798544 21.890562,21.889231 0,12.090687 -9.798544,21.889231 -21.887899,21.889231 -8.80364,0 -16.388621,-5.20094 -19.863461,-12.695354 -0.0093,-0.02398 -0.03462,-0.07059 -0.03462,-0.07059 -0.321438,-0.707379 -1.026362,-1.161882 -1.803347,-1.162721 h -16.84946 c -1.100121,0 -1.9911398,0.89102 -1.9911398,1.98981 0,0.171811 0.027969,0.338294 0.069257,0.496786 4.6415558,18.022822 21.0022078,31.34149 40.4727678,31.34149 23.07992,0 41.788653,-18.710065 41.788653,-41.788653 0,-23.078588 -18.708733,-41.7886521 -41.788653,-41.7886521 z" style="stroke-width:1.33187" /> </svg>
 
 
-def proc(pipelines, meta=None, description=None):
+def proc(slug, pipelines, meta=None, description=None):
     pipelines = [pipeline for pipeline_num, pipeline in sorted(pipelines.items(), reverse=True)]
 
     # Expand out workflows with reruns into multiple copies of the pipeline,
@@ -117,7 +117,7 @@ def proc(pipelines, meta=None, description=None):
     tr:nth-of-type(n+3) td:nth-of-type(2n+3):not(.spacer) { background-color: hsl(0, 0%, 94%); }
     tr:nth-of-type(n+3) td:nth-of-type(2n+4):not(.spacer) { background-color: hsl(0, 0%, 88%); }
     """
-    title = "CI summary: " + description if description else ""
+    title = f"CI summary: {description} ({slug})" if description else f"{slug}"
     head = (
         <head>
         <title>{title}</title>
@@ -171,14 +171,18 @@ def proc(pipelines, meta=None, description=None):
     table.append(header)
     table.append(header2)
 
+    assert slug.startswith("github/")
+
     for pipeline in pipelines:
         row = <tr></tr>
         if pipeline["rerun_index"] > 0:
             row.set_attr("style", "opacity: 0.5")
         ts = time.strftime("%Y-%m-%d %H:%M:%S", parse_time(pipeline["created_at"]))
         branch = pipeline["vcs"].get("branch", pipeline["vcs"].get("tag", "???"))
-        rev = pipeline['vcs']['revision']
-        rev_href = f"https://github.com/determined-ai/determined/commit/{rev}"
+        rev = pipeline["vcs"]["revision"]
+        rev_href = (
+            f"https://{slug.replace('github', 'github.com', 1)}/commit/{rev}"
+        )
         title = pipeline["vcs"].get("commit", {}).get("subject", "")
         row.append(
             <td style="padding-right: .5em; white-space: nowrap;"><b>{ts}</b></td>
@@ -209,7 +213,7 @@ def proc(pipelines, meta=None, description=None):
                 time_str = format_duration(int(t1 - t0))
                 timeline_href = f"workflow_timeline/{workflow['id']}"
                 time_link = <a href="{timeline_href}">{time_str}</a>
-                workflow_href = f"https://app.circleci.com/pipelines/github/determined-ai/determined/{pipeline['number']}/workflows/{workflow['id']}"
+                workflow_href = f"https://app.circleci.com/pipelines/{slug}/{pipeline['number']}/workflows/{workflow['id']}"
                 row.append(
                     <td style="text-align: right; padding-left: 1em;" class="spacer"><span style="{time_style}">{time_link}</span></td>
                 )
@@ -254,7 +258,7 @@ def proc(pipelines, meta=None, description=None):
     return doc
 
 
-def worker(in_q, out_q, pipeline_filter, request_counter):
+def worker(in_q, out_q, slug, pipeline_filter, request_counter):
     while True:
         (task, args) = in_q.get()
         if task is None:
@@ -263,7 +267,7 @@ def worker(in_q, out_q, pipeline_filter, request_counter):
 
         if task == "pipelines":
             branch, page, token = args
-            pipelines = circleci.project_pipelines(branch, page_token=token)
+            pipelines = circleci.project_pipelines(slug, branch, page_token=token)
             request_counter(pipelines.get(circleci.CACHE_KEY, False))
 
             for pipeline in pipelines["items"]:
@@ -305,7 +309,9 @@ def proc_all(pipelines):
     go(lambda p: True, "ci-all.html")
 
 
-def get_data(branch, pages=None, cached=False, jobs=32, pipeline_filter=lambda p: True):
+def get_data(
+    slug, branch, pages=None, cached=False, jobs=32, pipeline_filter=lambda p: True
+):
     if cached:
         with open("all-cache.json") as f:
             return json.load(f)
@@ -337,6 +343,7 @@ def get_data(branch, pages=None, cached=False, jobs=32, pipeline_filter=lambda p
             target=worker,
             args=(in_q, out_q),
             kwargs={
+                "slug": slug,
                 "pipeline_filter": pipeline_filter,
                 "request_counter": request_counter,
             },
