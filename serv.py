@@ -80,8 +80,8 @@ def tags(vcs, org, repo):
     return str(cisummary.proc(slug, data, meta=meta, description="tags"))
 
 
-@app.route("/workflow_timeline/<uuid>")
-def workflow_timeline(uuid):
+@app.route("/<vcs>/<org>/<repo>/workflow_timeline/<uuid>")
+def workflow_timeline(vcs, org, repo, uuid):
     with tempfile.TemporaryDirectory() as d:
         fn = os.path.join(d, "timeline.pdf")
         timeline.make(uuid, fn)
