@@ -62,6 +62,8 @@ def format_duration(dt):
     return "{}:{:02}:{:02}".format(h, m, s) if h else "{}:{:02}".format(m, s)
 
 
+# fmt: off
+
 class SVG:
     success = <svg style="color: rgb(4, 155, 74);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 L12,2 Z M10,17 L5,12 L6.41,10.59 L10,14.17 L17.59,6.58 L19,8 L10,17 L10,17 Z"></path></svg>
     failed = <svg style="color: rgb(242, 70, 70);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 L12,2 Z M13,17 L11,17 L11,15 L13,15 L13,17 L13,17 Z M13,13 L11,13 L11,7 L13,7 L13,13 L13,13 Z"></path></svg>
@@ -74,6 +76,8 @@ class SVG:
     not_running = <svg style="color: rgb(85, 85, 85);" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path fill-rule="evenodd" clip-rule="evenodd" d="M2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2C6.48 2 2 6.48 2 12ZM7 10.5C6.17 10.5 5.5 11.17 5.5 12C5.5 12.83 6.17 13.5 7 13.5C7.83 13.5 8.5 12.83 8.5 12C8.5 11.17 7.83 10.5 7 10.5ZM17 10.5C16.17 10.5 15.5 11.17 15.5 12C15.5 12.83 16.17 13.5 17 13.5C17.83 13.5 18.5 12.83 18.5 12C18.5 11.17 17.83 10.5 17 10.5ZM12 10.5C11.17 10.5 10.5 11.17 10.5 12C10.5 12.83 11.17 13.5 12 13.5C12.83 13.5 13.5 12.83 13.5 12C13.5 11.17 12.83 10.5 12 10.5Z"></path></svg>
 
     logo = <svg style="color: rgb(64, 64, 64);" height="24" width="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"> <circle fill="currentColor" cx="49.871479" cy="50.010807" id="circle2" r="9.9503775" style="stroke-width:1.33187" /> <path fill="currentColor" d="m 49.871482,8.2221539 c -19.47056,0 -35.831212,13.3186671 -40.4727677,31.3414891 -0.039956,0.158492 -0.069257,0.324975 -0.069257,0.496786 0,1.09879 0.8910187,1.98981 1.9898087,1.98981 h 16.849446 c 0.803117,0 1.489028,-0.476809 1.803348,-1.162721 0,0 0.0253,-0.04661 0.0333,-0.06926 3.473509,-7.495747 11.059822,-12.696687 19.863462,-12.696687 12.089354,0 21.890562,9.798544 21.890562,21.889231 0,12.090687 -9.798544,21.889231 -21.887899,21.889231 -8.80364,0 -16.388621,-5.20094 -19.863461,-12.695354 -0.0093,-0.02398 -0.03462,-0.07059 -0.03462,-0.07059 -0.321438,-0.707379 -1.026362,-1.161882 -1.803347,-1.162721 h -16.84946 c -1.100121,0 -1.9911398,0.89102 -1.9911398,1.98981 0,0.171811 0.027969,0.338294 0.069257,0.496786 4.6415558,18.022822 21.0022078,31.34149 40.4727678,31.34149 23.07992,0 41.788653,-18.710065 41.788653,-41.788653 0,-23.078588 -18.708733,-41.7886521 -41.788653,-41.7886521 z" style="stroke-width:1.33187" /> </svg>
+
+# fmt: on
 
 
 def proc(slug, pipelines, meta=None, description=None):
@@ -180,9 +184,7 @@ def proc(slug, pipelines, meta=None, description=None):
         ts = time.strftime("%Y-%m-%d %H:%M:%S", parse_time(pipeline["created_at"]))
         branch = pipeline["vcs"].get("branch", pipeline["vcs"].get("tag", "???"))
         rev = pipeline["vcs"]["revision"]
-        rev_href = (
-            f"https://{slug.replace('github', 'github.com', 1)}/commit/{rev}"
-        )
+        rev_href = f"https://{slug.replace('github', 'github.com', 1)}/commit/{rev}"
         title = pipeline["vcs"].get("commit", {}).get("subject", "")
         row.append(
             <td style="padding-right: .5em; white-space: nowrap;"><b>{ts}</b></td>
@@ -309,9 +311,7 @@ def proc_all(pipelines):
     go(lambda p: True, "ci-all.html")
 
 
-def get_data(
-    slug, branch, pages=None, cached=False, jobs=32, pipeline_filter=lambda p: True
-):
+def get_data(slug, branch, pages=None, cached=False, jobs=32, pipeline_filter=lambda p: True):
     if cached:
         with open("all-cache.json") as f:
             return json.load(f)
@@ -395,9 +395,7 @@ def main(args):
 
     args = parser.parse_args(args)
 
-    pipelines, _ = get_data(
-        args.branch, pages=args.pages, cached=args.cached, jobs=args.jobs
-    )
+    pipelines, _ = get_data(args.branch, pages=args.pages, cached=args.cached, jobs=args.jobs)
     proc_all(pipelines)
 
 

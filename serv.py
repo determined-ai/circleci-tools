@@ -59,9 +59,7 @@ def pulls(vcs, org, repo):
         None,
         pages=pages,
         jobs=32,
-        pipeline_filter=lambda p: p.get("vcs", {})
-        .get("branch", "")
-        .startswith("pull/"),
+        pipeline_filter=lambda p: p.get("vcs", {}).get("branch", "").startswith("pull/"),
     )
     return str(cisummary.proc(slug, data, meta=meta, description="pulls"))
 

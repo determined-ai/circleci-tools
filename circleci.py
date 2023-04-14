@@ -96,6 +96,4 @@ def workflow_jobs(uuid, page_token=None):
 
 
 def workflow_rerun(uuid, jobs=[], from_failed=False):
-    return api_post(
-        f"workflow/{uuid}/rerun", json={"jobs": jobs, "from_failed": from_failed}
-    )
+    return api_post(f"workflow/{uuid}/rerun", json={"jobs": jobs, "from_failed": from_failed})
