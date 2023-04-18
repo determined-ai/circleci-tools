@@ -42,6 +42,14 @@ def get_slug(vcs, org, repo):
     return slug
 
 
+@app.route("/<vcs>/<org>/<repo>/main")
+def main(vcs, org, repo):
+    slug = get_slug(vcs, org, repo)
+    pages = int(request.args.get("pages", 5))
+    data, meta = cisummary.get_data(slug, "main", pages=pages, jobs=32)
+    return str(cisummary.proc(slug, data, meta=meta, description="main"))
+
+
 @app.route("/<vcs>/<org>/<repo>/master")
 def master(vcs, org, repo):
     slug = get_slug(vcs, org, repo)
