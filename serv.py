@@ -62,16 +62,6 @@ def main(vcs, org, repo):
     return str(cisummary.proc(slug, data, meta=meta, description="main"))
 
 
-@app.route("/<vcs>/<org>/<repo>/master")
-def master(vcs, org, repo):
-    slug = get_slug(vcs, org, repo)
-    pages = int(request.args.get("pages", 5))
-    data, meta = cisummary.get_data(
-        slug, "master", pages=pages, jobs=32, pipeline_filter=lambda p: not is_ignored(slug, p)
-    )
-    return str(cisummary.proc(slug, data, meta=meta, description="master"))
-
-
 @app.route("/<vcs>/<org>/<repo>/pulls")
 def pulls(vcs, org, repo):
     slug = get_slug(vcs, org, repo)
