@@ -1,4 +1,8 @@
 .dockerignore
-cache
 Dockerfile
 Makefile
+__pycache__
+all-cache.json
+allowed_slugs.json
+cache
+ignored_pipelines.json
