@@ -6,7 +6,6 @@ import json
 import os
 import sys
 import tempfile
-from types import SimpleNamespace
 
 
 from flask import Flask, abort, request, send_file
@@ -30,7 +29,8 @@ try:
         allowed_slugs = set(json.load(f))
 except FileNotFoundError:
     print(
-        "\x1b[31;1mWARNING: Populate `allowed_slugs.json` with a list of allowed slugs or nothing will work!\x1b[m"
+        "\x1b[31;1mWARNING: Populate `allowed_slugs.json` with a list of allowed slugs or nothing"
+        " will work!\x1b[m"
     )
     allowed_slugs = set()
 
@@ -53,7 +53,7 @@ def get_slug(vcs, org, repo):
 
 
 @app.route("/<vcs>/<org>/<repo>/main")
-def main(vcs, org, repo):
+def main_(vcs, org, repo):
     slug = get_slug(vcs, org, repo)
     pages = int(request.args.get("pages", 5))
     data, meta = cisummary.get_data(
@@ -104,7 +104,7 @@ def compress(r):
     if "Content-Encoding" in r.headers:
         return r
     try:
-        data = r.get_data()
+        r.get_data()
     except RuntimeError:
         return r
     r.set_data(gzip.compress(r.get_data()))
