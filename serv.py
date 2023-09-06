@@ -116,7 +116,7 @@ def main(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("-b", "--bind", default="127.0.0.1")
     parser.add_argument("-d", "--debug", action="store_true")
-    parser.add_argument("-p", "--port", type=int, default=9999)
+    parser.add_argument("-p", "--port", type=int, default=8080)
 
     args = parser.parse_args(args)
 
