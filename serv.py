@@ -99,6 +99,11 @@ def workflow_timeline(vcs, org, repo, uuid):
         return send_file(fn)
 
 
+@app.route("/")
+def root():
+    return ""
+
+
 @app.after_request
 def compress(r):
     if "Content-Encoding" in r.headers:
