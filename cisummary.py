@@ -109,9 +109,11 @@ def proc(slug, pipelines, meta=None, description=None):
                 structure[w["name"]][j["name"]] = None
 
     try:
-        # Push nightly to the end, or it'll flip back and forth depending on
-        # whether the last job was a nightly or not.
-        structure["nightly"] = structure.pop("nightly")
+        # Push nightly workflows to the end, or they'll flip back and forth depending on whether the
+        # last job was a nightly or not.
+        nightlies = [k for k in structure if "nightly" in k]
+        for n in nightlies:
+            structure[n] = structure.pop(n)
     except KeyError:
         pass
 
