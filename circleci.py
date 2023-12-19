@@ -32,10 +32,24 @@ def api_get(
     if headers is None:
         headers = {}
     headers["Circle-Token"] = token
-    r = requests.get(
-        f"https://circleci.com/api/v{_version}/{url}", *args, headers=headers, **kwargs
-    )
-    j = r.json()
+
+    while True:
+        r = requests.get(
+            f"https://circleci.com/api/v{_version}/{url}", *args, headers=headers, **kwargs
+        )
+
+        if r.ok:
+            j = r.json()
+            break
+
+        if "Retry-After" in r.headers:
+            retry_after = int(r.headers["Retry-After"])
+            if retry_after > 0:
+                print(f"retrying {url} after {retry_after}")
+            time.sleep(retry_after)
+        else:
+            r.raise_for_status()
+
     if fn and (not _cache_filter or _cache_filter(j)):
         with open(fn, "w") as f:
             json.dump(j, f)
