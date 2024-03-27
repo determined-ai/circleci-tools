@@ -15,11 +15,11 @@ of repositories that may be accessed, e.g.,
 
 -  Run ``pip install -r requirements.txt`` to install dependencies.
 -  Run ``python serv.py``.
--  Access the server at ``http://localhost:9999``.
+-  Access the server at ``http://localhost:8080``.
 
 ********
  Docker
 ********
 
 -  Run ``make serve``.
--  Access the server at ``http://localhost:9999``.
+-  Access the server at ``http://localhost:8080``.
