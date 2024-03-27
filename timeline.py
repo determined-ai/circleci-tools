@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 
 from typing import List, NamedTuple
-import json
-import math
 import os
 import sys
 import time
 
 from matplotlib import pyplot as plt, ticker
 import matplotlib
-import requests
 
 import circleci
 
