@@ -1,7 +1,6 @@
 # coding: pyxl
 
 import argparse
-import enum
 import json
 import os
 import queue
