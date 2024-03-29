@@ -33,6 +33,13 @@ except FileNotFoundError:
         " will work!\x1b[m"
     )
     allowed_slugs = set()
+except IsADirectoryError:
+    print(
+        "\x1b[31;1mWARNING: `allowed_slugs.json` is a directory, probably because this is running "
+        "in Docker and the file doesn't exist on the host; create it and populate it with a list "
+        "of allowed slugs or nothing will work!\x1b[m"
+    )
+    allowed_slugs = set()
 
 try:
     with open("ignored_pipelines.json", "rb") as f:
